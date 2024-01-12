@@ -1,4 +1,4 @@
-package com.farid.myai.feature.chat
+package com.farid.myai.feature.gemini
 
 import android.graphics.Bitmap
 import java.util.UUID

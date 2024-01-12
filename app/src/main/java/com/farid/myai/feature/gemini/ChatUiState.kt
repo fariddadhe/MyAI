@@ -1,4 +1,4 @@
-package com.farid.myai.feature.chat
+package com.farid.myai.feature.gemini
 
 import androidx.compose.runtime.toMutableStateList
 
