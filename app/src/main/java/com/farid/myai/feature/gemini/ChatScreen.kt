@@ -5,12 +5,16 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
@@ -20,8 +24,10 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material3.Card
@@ -34,6 +40,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -133,7 +140,7 @@ private fun ChatList(
     LazyColumn(
         reverseLayout = true,
         state = listState,
-        modifier = Modifier.padding(horizontal = 16.dp)
+        modifier = Modifier.padding(horizontal = 8.dp)
     ){
         items(chatMessage.reversed()) { message ->
             ChatBubbleItem(message)
@@ -236,44 +243,16 @@ fun MessageInput(
         }
     }
 
-    Column(Modifier.padding(vertical = 24.dp, horizontal = 16.dp)) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = {
-                        pickMedia.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                        )
-                    },
-                ) {
-                    Icon(
-                        Icons.Outlined.AddCircle,
-                        contentDescription = "",
-                        tint = Color.White,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-                OutlinedTextField(
-                    value = userMessage,
-                    label = { "Message" },
-                    placeholder = { "Masukkan pertanyaanmu" },
-                    onValueChange = { userMessage = it },
-                    colors = TextFieldDefaults.textFieldColors(
-                        containerColor = Color.Transparent,
-                        focusedIndicatorColor = LightBlue,
-                        unfocusedIndicatorColor = DarkGreen
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 4.dp)
-                )
+    Column(Modifier.padding(vertical = 24.dp, horizontal = 8.dp)) {
+        TextField(
+            value = userMessage,
+            onValueChange = { userMessage = it },
+            colors = TextFieldDefaults.textFieldColors(
+                containerColor = DarkGreen,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent
+            ),
+            trailingIcon = {
                 IconButton(
                     onClick = {
                         if (userMessage.isNotBlank()) {
@@ -290,8 +269,32 @@ fun MessageInput(
                         tint = if(userMessage.isNotBlank()) Color.White else GreyBlue,
                     )
                 }
-            }
-        }
+            },
+            leadingIcon = {
+                Box(
+                    modifier = Modifier
+                        .background(LightBlue, CircleShape)
+                        .padding(4.dp)
+                        .clickable {
+                            pickMedia.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
+                    contentAlignment = Alignment.Center
+                ){
+                    Icon(
+                        Icons.Outlined.Add,
+                        contentDescription = "",
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp)
+                .clip(RoundedCornerShape(30.dp))
+        )
 
         if(imageUris.isNotEmpty()){
             LazyRow(
