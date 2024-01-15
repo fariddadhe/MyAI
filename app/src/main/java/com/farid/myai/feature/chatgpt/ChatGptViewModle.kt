@@ -64,6 +64,12 @@ class ChatGptViewModle : ViewModel(), KoinComponent{
 
                     is BaseModel.Error -> {
                         println("error: ${baseModel.error}")
+                        withContext(Dispatchers.IO) {
+                            database.answerDao().addAnswer(answerEntity = AnswerEntity(
+                                role = "error",
+                                content = baseModel.error
+                            ))
+                        }
                     }
 
                     is BaseModel.Loading -> {

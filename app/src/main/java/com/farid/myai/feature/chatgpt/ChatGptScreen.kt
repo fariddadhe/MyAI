@@ -87,7 +87,8 @@ fun ChatGptScreen(
                     coroutineScope.launch {
                         listState.scrollToItem(0)
                     }
-                }
+                },
+                loading
             )
         }
     ) { paddingValues ->
@@ -121,12 +122,12 @@ private fun ChatList(
 private fun ChatBubbleItem(
     chatMessage: Message
 ){
-    val isModelMessage = chatMessage.role == "assistant"
+    val isModelMessage = chatMessage.role == "assistant" || chatMessage.role == "error"
 
     val backgroundColor = when (chatMessage.role) {
         "assistant" -> DarkGreen
         "user" -> LightBlue
-        else -> LightBlue
+        else -> MaterialTheme.colorScheme.errorContainer
     }
 
     val bubbleShape = if (isModelMessage) {
@@ -153,13 +154,6 @@ private fun ChatBubbleItem(
 //            modifier = Modifier.padding(bottom = 4.dp)
 //        )
         Row {
-//            if (chatMessage.isPending) {
-//                CircularProgressIndicator(
-//                    modifier = Modifier
-//                        .align(Alignment.CenterVertically)
-//                        .padding(all = 8.dp)
-//                )
-//            }
             BoxWithConstraints {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = backgroundColor),
@@ -181,7 +175,8 @@ private fun ChatBubbleItem(
 @Composable
 private fun MessageInput(
     onReasonClicked: (String) -> Unit = { _ -> },
-    resetScroll: () -> Unit = {}
+    resetScroll: () -> Unit = {},
+    loading: Boolean
 ){
     var userMessage by rememberSaveable { mutableStateOf("") }
 
@@ -195,20 +190,24 @@ private fun MessageInput(
                 unfocusedIndicatorColor = Color.Transparent
             ),
             trailingIcon = {
-                IconButton(
-                    onClick = {
-                        if (userMessage.isNotBlank()) {
-                            onReasonClicked(userMessage)
-                            userMessage = ""
-                            resetScroll()
-                        }
-                    },
-                ) {
-                    Icon(
-                        Icons.Outlined.Send,
-                        contentDescription = "",
-                        tint = if(userMessage.isNotBlank()) Color.White else GreyBlue,
-                    )
+                if(loading){
+                    CircularProgressIndicator()
+                }else{
+                    IconButton(
+                        onClick = {
+                            if (userMessage.isNotBlank()) {
+                                onReasonClicked(userMessage)
+                                userMessage = ""
+                                resetScroll()
+                            }
+                        },
+                    ) {
+                        Icon(
+                            Icons.Outlined.Send,
+                            contentDescription = "",
+                            tint = if(userMessage.isNotBlank()) Color.White else GreyBlue,
+                        )
+                    }
                 }
             },
             modifier = Modifier
