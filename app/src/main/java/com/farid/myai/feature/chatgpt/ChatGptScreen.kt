@@ -148,11 +148,6 @@ private fun ChatBubbleItem(
             .padding(horizontal = 8.dp, vertical = 4.dp)
             .fillMaxWidth()
     ) {
-//        Text(
-//            text = chatMessage.participant.name,
-//            style = MaterialTheme.typography.bodySmall,
-//            modifier = Modifier.padding(bottom = 4.dp)
-//        )
         Row {
             BoxWithConstraints {
                 Card(
