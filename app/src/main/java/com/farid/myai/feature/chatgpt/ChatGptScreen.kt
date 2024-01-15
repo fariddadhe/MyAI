@@ -1,9 +1,7 @@
-package com.farid.myai.feature.gemini
+package com.farid.myai.feature.chatgpt
 
-import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -26,7 +24,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -42,8 +39,8 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -51,64 +48,39 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.ImageLoader
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import androidx.navigation.NavController
 import coil.request.SuccessResult
 import coil.size.Precision
+import com.farid.myai.feature.gemini.ChatMessage
+import com.farid.myai.feature.gemini.Participant
+import com.farid.myai.models.Message
 import com.farid.myai.ui.theme.DarkGreen
 import com.farid.myai.ui.theme.GreyBlue
 import com.farid.myai.ui.theme.LightBlue
 import com.farid.myai.ui.theme.PrimaryColor
 import com.farid.myai.ui.theme.WhiteTextColor
-import com.farid.myai.util.UriSaver
 import kotlinx.coroutines.launch
 
-
 @Composable
-fun ChatScreen(
-    chatViewModel: ChatViewModel = viewModel()
+fun ChatGptScreen(
+    navController: NavController,
+    viewModel: ChatGptViewModle = viewModel()
 ){
-    val chatUiState by chatViewModel.uiState.collectAsState()
+    val message by viewModel.messages.collectAsState()
     val listState = rememberLazyListState()
+    val loading by viewModel.loading.collectAsState()
     val coroutineScope = rememberCoroutineScope()
-    val imageRequestBuilder = ImageRequest.Builder(LocalContext.current)
-    val imageLoader = ImageLoader.Builder(LocalContext.current).build()
 
     Scaffold(
         containerColor = PrimaryColor,
         bottomBar = {
             MessageInput(
-                onReasonClicked = { inputText, selectedItems ->
+                onReasonClicked = { inputText ->
                     coroutineScope.launch {
-                        if(selectedItems != null){
-                            val bitmaps = selectedItems.mapNotNull {
-                                val imageRequest = imageRequestBuilder
-                                    .data(it)
-                                    .size(size = 768)
-                                    .precision(Precision.EXACT)
-                                    .build()
-
-                                try {
-                                    val result = imageLoader.execute(imageRequest)
-                                    if(result is SuccessResult){
-                                        return@mapNotNull (result.drawable as BitmapDrawable).bitmap
-                                    }else{
-                                        return@mapNotNull null
-                                    }
-                                }catch (e: Exception){
-                                    return@mapNotNull null
-                                }
-                            }
-                            chatViewModel.sendMessage(inputText, bitmaps)
-                        }else{
-                            chatViewModel.sendMessage(inputText, null)
-                        }
+                        viewModel.askQuestion(inputText)
                     }
                 },
                 resetScroll = {
@@ -124,14 +96,14 @@ fun ChatScreen(
                 .padding(paddingValues)
                 .fillMaxSize()
         ) {
-            ChatList(chatUiState.message, listState)
+            ChatList(message, listState)
         }
     }
 }
 
 @Composable
 private fun ChatList(
-    chatMessage: List<ChatMessage>,
+    chatMessage: List<Message>,
     listState: LazyListState
 ){
     LazyColumn(
@@ -147,15 +119,14 @@ private fun ChatList(
 
 @Composable
 private fun ChatBubbleItem(
-    chatMessage: ChatMessage
+    chatMessage: Message
 ){
-    val isModelMessage = chatMessage.participant == Participant.MODEL ||
-            chatMessage.participant == Participant.ERROR
+    val isModelMessage = chatMessage.role == "assistant"
 
-    val backgroundColor = when (chatMessage.participant) {
-        Participant.MODEL -> DarkGreen
-        Participant.USER -> LightBlue
-        Participant.ERROR -> MaterialTheme.colorScheme.errorContainer
+    val backgroundColor = when (chatMessage.role) {
+        "assistant" -> DarkGreen
+        "user" -> LightBlue
+        else -> LightBlue
     }
 
     val bubbleShape = if (isModelMessage) {
@@ -182,13 +153,13 @@ private fun ChatBubbleItem(
 //            modifier = Modifier.padding(bottom = 4.dp)
 //        )
         Row {
-            if (chatMessage.isPending) {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .align(Alignment.CenterVertically)
-                        .padding(all = 8.dp)
-                )
-            }
+//            if (chatMessage.isPending) {
+//                CircularProgressIndicator(
+//                    modifier = Modifier
+//                        .align(Alignment.CenterVertically)
+//                        .padding(all = 8.dp)
+//                )
+//            }
             BoxWithConstraints {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = backgroundColor),
@@ -197,42 +168,22 @@ private fun ChatBubbleItem(
                 ) {
                     Text(
                         style = TextStyle(color = WhiteTextColor),
-                        text = chatMessage.text,
+                        text = chatMessage.content,
                         modifier = Modifier.padding(16.dp)
                     )
-                }
-            }
-        }
-        if(chatMessage.selectedImages.isNotEmpty()){
-            LazyRow(
-                modifier = Modifier.padding(all = 8.dp)
-            ) {
-                items(chatMessage.selectedImages.size) { index ->
-                    LoadImage(chatMessage.selectedImages[index])
                 }
             }
         }
     }
 }
 
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MessageInput(
-    onReasonClicked: (String, List<Uri>?) -> Unit = { _, _ -> },
+private fun MessageInput(
+    onReasonClicked: (String) -> Unit = { _ -> },
     resetScroll: () -> Unit = {}
-) {
+){
     var userMessage by rememberSaveable { mutableStateOf("") }
-    val imageUris = rememberSaveable(saver = UriSaver()) { mutableStateListOf() }
-
-    val pickMedia = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
-    ) { imageUri ->
-        imageUri?.let {
-            imageUris.add(it)
-        }
-    }
 
     Column(Modifier.padding(vertical = 16.dp, horizontal = 8.dp)) {
         TextField(
@@ -247,10 +198,9 @@ fun MessageInput(
                 IconButton(
                     onClick = {
                         if (userMessage.isNotBlank()) {
-                            onReasonClicked(userMessage, if(imageUris.isNotEmpty()) imageUris.toList() else null)
-                            resetScroll()
+                            onReasonClicked(userMessage)
                             userMessage = ""
-                            imageUris.clear()
+                            resetScroll()
                         }
                     },
                 ) {
@@ -261,55 +211,16 @@ fun MessageInput(
                     )
                 }
             },
-            leadingIcon = {
-                Box(
-                    modifier = Modifier
-                        .background(LightBlue, CircleShape)
-                        .padding(4.dp)
-                        .clickable {
-                            pickMedia.launch(
-                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                            )
-                        },
-                    contentAlignment = Alignment.Center
-                ){
-                    Icon(
-                        Icons.Outlined.Add,
-                        contentDescription = "",
-                        tint = Color.White,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 4.dp)
                 .clip(RoundedCornerShape(30.dp))
         )
-
-        if(imageUris.isNotEmpty()){
-            LazyRow(
-                modifier = Modifier.padding(all = 8.dp)
-            ) {
-                items(imageUris.size) { index ->
-                   LoadImage(image = imageUris[index])
-                }
-            }
-        }
     }
 }
 
-@Composable
-private fun LoadImage(image: Any) {
-    AsyncImage(
-        model = image,
-        contentScale = ContentScale.Crop,
-        contentDescription = null,
-        modifier = Modifier
-            .padding(4.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .size(80.dp)
-    )
-}
+
+
+
 
 

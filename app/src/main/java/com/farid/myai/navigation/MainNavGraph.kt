@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.farid.myai.BuildConfig
+import com.farid.myai.feature.chatgpt.ChatGptScreen
 import com.farid.myai.feature.gemini.ChatScreen
 import com.farid.myai.feature.gemini.ChatViewModel
 import com.farid.myai.feature.onboarding.OnboardingScreen
@@ -33,7 +34,7 @@ fun MainNavGraph(navController: NavHostController) {
             ChatScreen(viewModel)
         }
         composable(route = Screen.ChatGpt.route) {
-
+            ChatGptScreen(navController = navController)
         }
     }
 }

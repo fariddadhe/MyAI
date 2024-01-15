@@ -8,7 +8,7 @@ import retrofit2.http.Header
 import retrofit2.http.Headers
 import retrofit2.http.POST
 
-const val APIKEY = "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"
+const val APIKEY = "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"
 
 interface Api {
 
