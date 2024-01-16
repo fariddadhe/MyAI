@@ -31,7 +31,7 @@ fun MainNavGraph(navController: NavHostController) {
                 apiKey = BuildConfig.apiKey
             )
             val viewModel = ChatViewModel(generativeModel)
-            ChatScreen(viewModel)
+            ChatScreen(navController, viewModel)
         }
         composable(route = Screen.ChatGpt.route) {
             ChatGptScreen(navController = navController)

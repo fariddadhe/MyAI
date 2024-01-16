@@ -4,14 +4,18 @@ import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -24,7 +28,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.outlined.Send
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,12 +54,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.request.SuccessResult
 import coil.size.Precision
+import com.farid.myai.R
 import com.farid.myai.feature.gemini.ChatMessage
 import com.farid.myai.feature.gemini.Participant
 import com.farid.myai.models.Message
@@ -68,7 +78,7 @@ import kotlinx.coroutines.launch
 fun ChatGptScreen(
     navController: NavController,
     viewModel: ChatGptViewModle = viewModel()
-){
+) {
     val message by viewModel.messages.collectAsState()
     val listState = rememberLazyListState()
     val loading by viewModel.loading.collectAsState()
@@ -76,6 +86,13 @@ fun ChatGptScreen(
 
     Scaffold(
         containerColor = PrimaryColor,
+        topBar = {
+            CustonTopBar(
+                onBackPressed = {
+                    navController.popBackStack()
+                }
+            )
+        },
         bottomBar = {
             MessageInput(
                 onReasonClicked = { inputText ->
@@ -106,12 +123,12 @@ fun ChatGptScreen(
 private fun ChatList(
     chatMessage: List<Message>,
     listState: LazyListState
-){
+) {
     LazyColumn(
         reverseLayout = true,
         state = listState,
         modifier = Modifier.padding(horizontal = 8.dp)
-    ){
+    ) {
         items(chatMessage.reversed()) { message ->
             ChatBubbleItem(message)
         }
@@ -121,7 +138,7 @@ private fun ChatList(
 @Composable
 private fun ChatBubbleItem(
     chatMessage: Message
-){
+) {
     val isModelMessage = chatMessage.role == "assistant" || chatMessage.role == "error"
 
     val backgroundColor = when (chatMessage.role) {
@@ -166,13 +183,68 @@ private fun ChatBubbleItem(
     }
 }
 
+@Composable
+private fun CustonTopBar(
+    onBackPressed: () -> Unit = {}
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 24.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = {
+                onBackPressed()
+            }
+        ) {
+            Icon(
+                Icons.Outlined.KeyboardArrowLeft,
+                contentDescription = "",
+                tint = Color.White,
+                modifier = Modifier.size(32.dp)
+            )
+        }
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.chatbot),
+                contentDescription = "",
+                Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Chat GPT",
+                style = TextStyle(
+                    color = WhiteTextColor,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            )
+        }
+
+        IconButton(
+            onClick = {}
+        ) {
+            Icon(
+                Icons.Outlined.Settings,
+                contentDescription = "",
+                tint = Color.White,
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MessageInput(
     onReasonClicked: (String) -> Unit = { _ -> },
     resetScroll: () -> Unit = {},
     loading: Boolean
-){
+) {
     var userMessage by rememberSaveable { mutableStateOf("") }
 
     Column(Modifier.padding(vertical = 16.dp, horizontal = 8.dp)) {
@@ -185,9 +257,9 @@ private fun MessageInput(
                 unfocusedIndicatorColor = Color.Transparent
             ),
             trailingIcon = {
-                if(loading){
+                if (loading) {
                     CircularProgressIndicator()
-                }else{
+                } else {
                     IconButton(
                         onClick = {
                             if (userMessage.isNotBlank()) {
@@ -200,7 +272,7 @@ private fun MessageInput(
                         Icon(
                             Icons.Outlined.Send,
                             contentDescription = "",
-                            tint = if(userMessage.isNotBlank()) Color.White else GreyBlue,
+                            tint = if (userMessage.isNotBlank()) Color.White else GreyBlue,
                         )
                     }
                 }
